@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book Game — Tap to Open</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:'Nunito',sans-serif;
+  min-height:100vh;
+  overflow:hidden;
+  user-select:none;
+  /* Deep emerald green — classic old English library wall */
+  background:
+    /* Subtle damask-like wallpaper diamonds */
+    radial-gradient(ellipse 18px 22px at 0px 0px,  rgba(255,210,80,0.04) 40%, transparent 41%),
+    radial-gradient(ellipse 18px 22px at 36px 44px, rgba(255,210,80,0.04) 40%, transparent 41%),
+    /* Wall base — deep hunter green */
+    linear-gradient(160deg, #0c1f14 0%, #0a1a10 40%, #0e2016 70%, #0b1c12 100%);
+  background-size: 36px 44px, 36px 44px, 100% 100%;
+}
+
+/* Subtle vertical wood-panel lines */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px, transparent 120px,
+      rgba(0,0,0,0.12) 120px, rgba(0,0,0,0.12) 121px,
+      transparent 121px, transparent 240px,
+      rgba(255,200,80,0.03) 240px, rgba(255,200,80,0.03) 241px
+    );
+  pointer-events:none;z-index:0;
+}
+
+/* Warm ceiling light + edge vignette */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% -5%, rgba(255,185,60,0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 25% 100% at 0% 50%,  rgba(0,0,0,0.45) 0%, transparent 100%),
+    radial-gradient(ellipse 25% 100% at 100% 50%, rgba(0,0,0,0.45) 0%, transparent 100%),
+    radial-gradient(ellipse 100% 25% at 50% 100%, rgba(0,0,0,0.4) 0%, transparent 100%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── SHELF BANDS behind the books ─────────────────── */
+.shelves{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  /* 4 shelves evenly across the screen height (after header) */
+  background:
+    /* Shelf 1 */
+    linear-gradient(180deg,
+      transparent 17.8%,
+      rgba(100,60,15,0.5) 17.8%, rgba(140,85,20,0.7) 18.2%, rgba(80,45,10,0.6) 18.6%, rgba(60,35,8,0.3) 19%, transparent 19%
+    ),
+    /* Shelf 2 */
+    linear-gradient(180deg,
+      transparent 37.2%,
+      rgba(100,60,15,0.5) 37.2%, rgba(140,85,20,0.7) 37.6%, rgba(80,45,10,0.6) 38%, rgba(60,35,8,0.3) 38.4%, transparent 38.4%
+    ),
+    /* Shelf 3 */
+    linear-gradient(180deg,
+      transparent 56.8%,
+      rgba(100,60,15,0.5) 56.8%, rgba(140,85,20,0.7) 57.2%, rgba(80,45,10,0.6) 57.6%, rgba(60,35,8,0.3) 58%, transparent 58%
+    ),
+    /* Shelf 4 */
+    linear-gradient(180deg,
+      transparent 76.5%,
+      rgba(100,60,15,0.5) 76.5%, rgba(140,85,20,0.7) 76.9%, rgba(80,45,10,0.6) 77.3%, rgba(60,35,8,0.3) 77.7%, transparent 77.7%
+    );
+}
+
+/* ── GAME LAYOUT ──────────────────────────────────── */
+.game{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;height:100vh;padding:0 14px;}
+
+/* ── HEADER ──────────────────────────────────────── */
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 6px 8px;flex-shrink:0;}
+
+.timer-group{display:flex;align-items:center;gap:6px;}
+.t-btn{
+  background:rgba(212,168,67,0.14);border:1.5px solid rgba(212,168,67,0.32);
+  border-radius:50%;width:24px;height:24px;font-size:16px;font-weight:900;
+  color:rgba(212,168,67,0.75);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;line-height:1;
+}
+.t-btn:hover{background:rgba(212,168,67,0.26);color:#d4a843;}
+.timer-box{
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  font-size:clamp(22px,3vw,34px);
+  color:#d4a843;
+  text-shadow:0 0 20px rgba(212,168,67,0.6), 0 2px 0 rgba(0,0,0,0.6);
+  min-width:74px;text-align:center;letter-spacing:1px;
+}
+
+.title-wrap{flex:1;text-align:center;cursor:pointer;}
+.game-title{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:700;font-style:italic;
+  font-size:clamp(18px,2.6vw,34px);
+  color:#f0e0b0;
+  text-shadow:0 0 28px rgba(212,168,67,0.35), 0 2px 6px rgba(0,0,0,0.8);
+  letter-spacing:.4px;line-height:1.15;
+}
+.game-title:hover{text-decoration:underline;text-decoration-color:rgba(212,168,67,0.35);text-underline-offset:4px;}
+.title-edit-input{
+  font-family:'Cormorant Garamond',serif;font-weight:700;font-style:italic;
+  font-size:clamp(18px,2.6vw,34px);
+  color:#f0e0b0;background:transparent;
+  border:none;border-bottom:2px solid rgba(212,168,67,0.45);
+  text-align:center;outline:none;width:100%;max-width:500px;display:none;
+}
+.tap-hint{
+  min-width:90px;text-align:right;
+  font-size:clamp(11px,1.2vw,14px);
+  color:rgba(200,180,120,0.45);
+  font-style:italic;font-weight:700;
+}
+
+/* ── GRID ─────────────────────────────────────────── */
+.grid-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 0 10px;width:100%;}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+  gap:clamp(10px,1.6vw,22px);
+  width:100%;max-width:920px;
+}
+
+/* ══════════════════════════════════════════════════
+   BOOK ANATOMY
+   [spine 14%] [cover 72%] [pages 14%]
+══════════════════════════════════════════════════ */
+.book{
+  aspect-ratio:0.82;
+  display:flex;cursor:pointer;
+  position:relative;
+  border-radius:1px 5px 5px 1px;
+  filter:
+    drop-shadow(3px 5px 8px rgba(0,0,0,0.75))
+    drop-shadow(-1px 1px 3px rgba(0,0,0,0.5));
+  transition:filter .22s, transform .22s;
+}
+.book:hover{
+  filter:
+    drop-shadow(4px 10px 16px rgba(0,0,0,0.8))
+    drop-shadow(-2px 1px 4px rgba(0,0,0,0.5))
+    drop-shadow(0 0 18px rgba(212,168,67,0.45));
+  transform:translateY(-8px) scale(1.08);
+}
+.book.open{
+  filter:drop-shadow(1px 2px 4px rgba(0,0,0,0.3));
+  transform:none;opacity:0.35;cursor:default;
+}
+
+/* SPINE */
+.sp{
+  width:14%;border-radius:1px 0 0 1px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:space-between;padding:11% 0;
+  flex-shrink:0;position:relative;overflow:hidden;
+}
+/* Shade + grain on spine */
+.sp::after{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 35%,
+      rgba(255,255,255,0.06) 55%, rgba(0,0,0,0.25) 100%),
+    repeating-linear-gradient(3deg,
+      transparent 0px,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+}
+/* Raised spine bands */
+.sp::before{
+  content:'';position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,
+    transparent 12%, rgba(255,255,255,0.14) 13%, rgba(0,0,0,0.22) 14.5%, transparent 15.5%,
+    transparent 29%, rgba(255,255,255,0.14) 30%, rgba(0,0,0,0.22) 31.5%, transparent 32.5%,
+    transparent 67%, rgba(255,255,255,0.14) 68%, rgba(0,0,0,0.22) 69.5%, transparent 70.5%,
+    transparent 83%, rgba(255,255,255,0.14) 84%, rgba(0,0,0,0.22) 85.5%, transparent 86.5%
+  );
+}
+.sgem{width:5px;height:5px;border-radius:50%;background:radial-gradient(circle,rgba(220,180,80,0.6),rgba(180,130,30,0.2));flex-shrink:0;position:relative;z-index:2;}
+
+/* COVER */
+.cv{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:9%;
+  padding:10% 6%;position:relative;overflow:hidden;
+}
+/* Leather grain */
+.cv::before{
+  content:'';position:absolute;inset:0;
+  background:
+    repeating-linear-gradient(72deg, transparent 0px,transparent 4px,rgba(0,0,0,0.03) 4px,rgba(0,0,0,0.03) 5px),
+    repeating-linear-gradient(14deg, transparent 0px,transparent 7px,rgba(255,255,255,0.018) 7px,rgba(255,255,255,0.018) 8px),
+    linear-gradient(130deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 25%, transparent 50%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0.22) 100%);
+  z-index:0;
+}
+/* Corner wear */
+.cv::after{
+  content:'';position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(circle at 2% 2%,   rgba(0,0,0,0.3) 0%,transparent 22%),
+    radial-gradient(circle at 98% 2%,  rgba(0,0,0,0.26) 0%,transparent 20%),
+    radial-gradient(circle at 2% 98%,  rgba(0,0,0,0.26) 0%,transparent 20%),
+    radial-gradient(circle at 98% 98%, rgba(0,0,0,0.3) 0%,transparent 22%);
+}
+/* Gold tooled frame */
+.cf{position:absolute;inset:9%;border:1.5px solid rgba(212,168,67,0.4);border-radius:1px;z-index:1;box-shadow:inset 0 0 0 2px rgba(212,168,67,0.1);}
+.cn{
+  font-family:'Cormorant Garamond',serif;font-weight:700;
+  font-size:clamp(14px,2.1vw,28px);
+  color:#e8d070;
+  text-shadow:0 1px 4px rgba(0,0,0,0.7), 0 0 14px rgba(212,168,67,0.6);
+  line-height:1;z-index:2;position:relative;letter-spacing:.5px;
+}
+.co{font-size:clamp(7px,0.85vw,11px);color:rgba(212,168,67,0.42);z-index:2;position:relative;letter-spacing:3px;}
+
+/* RIBBON BOOKMARK */
+.rb{
+  position:absolute;top:0;right:23%;
+  width:8%;height:22%;z-index:3;
+  border-radius:0 0 50% 50%;
+  box-shadow:1px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* PAGE EDGES */
+.pg{
+  width:14%;border-radius:0 5px 5px 0;flex-shrink:0;position:relative;
+  background:
+    repeating-linear-gradient(180deg,
+      #f2e9d6 0px,#f2e9d6 1.5px,
+      #e6dcc5 1.5px,#e6dcc5 2px,
+      #eee4d0 2px,#eee4d0 3.5px,
+      #e0d6be 3.5px,#e0d6be 4px,
+      #ebe1ce 4px,#ebe1ce 5.5px,
+      #dbd1b8 5.5px,#dbd1b8 6px
+    );
+  box-shadow:inset -2px 0 5px rgba(0,0,0,0.14),inset 2px 0 4px rgba(255,255,255,0.65);
+}
+/* Gold gilding top & bottom */
+.pg::before,.pg::after{content:'';position:absolute;left:0;right:0;height:7%;}
+.pg::before{top:0;background:linear-gradient(180deg,rgba(212,168,67,0.4),rgba(212,168,67,0.06));}
+.pg::after{bottom:0;background:linear-gradient(0deg,rgba(212,168,67,0.36),rgba(212,168,67,0.05));}
+
+/* ══ 9 LEATHER THEMES ══ */
+.lc0 .sp{background:linear-gradient(180deg,#6e1426,#4a0c1a,#6e1426,#4a0c1a);}
+.lc0 .cv{background:linear-gradient(150deg,#8a1a2e,#6a0e1e,#7c1428);}
+.lc0 .rb{background:linear-gradient(180deg,#f0d060,#c8940a);}
+
+.lc1 .sp{background:linear-gradient(180deg,#1c4020,#102a14,#1c4020,#102a14);}
+.lc1 .cv{background:linear-gradient(150deg,#205028,#163818,#1c4424);}
+.lc1 .rb{background:linear-gradient(180deg,#e84040,#b82020);}
+
+.lc2 .sp{background:linear-gradient(180deg,#102244,#081630,#102244,#081630);}
+.lc2 .cv{background:linear-gradient(150deg,#142a58,#0c1c42,#102450);}
+.lc2 .rb{background:linear-gradient(180deg,#f0d060,#c8940a);}
+
+.lc3 .sp{background:linear-gradient(180deg,#42200a,#2c1406,#42200a,#2c1406);}
+.lc3 .cv{background:linear-gradient(150deg,#56280e,#3c1a08,#4c2210);}
+.lc3 .rb{background:linear-gradient(180deg,#48a0e0,#2878c0);}
+
+.lc4 .sp{background:linear-gradient(180deg,#30184a,#1e0e32,#30184a,#1e0e32);}
+.lc4 .cv{background:linear-gradient(150deg,#401e5e,#2a1244,#381856);}
+.lc4 .rb{background:linear-gradient(180deg,#e0c850,#b89820);}
+
+.lc5 .sp{background:linear-gradient(180deg,#1a3c3c,#0e2828,#1a3c3c,#0e2828);}
+.lc5 .cv{background:linear-gradient(150deg,#1e4c4c,#12343a,#184444);}
+.lc5 .rb{background:linear-gradient(180deg,#e89040,#c06010);}
+
+.lc6 .sp{background:linear-gradient(180deg,#3a1c08,#281206,#3a1c08,#281206);}
+.lc6 .cv{background:linear-gradient(150deg,#4c2610,#36180a,#442010);}
+.lc6 .rb{background:linear-gradient(180deg,#80d040,#50a010);}
+
+.lc7 .sp{background:linear-gradient(180deg,#2e1c06,#1e1204,#2e1c06,#1e1204);}
+.lc7 .cv{background:linear-gradient(150deg,#3c2408,#281604,#342008);}
+.lc7 .rb{background:linear-gradient(180deg,#d04040,#a02020);}
+
+.lc8 .sp{background:linear-gradient(180deg,#1e1030,#120820,#1e1030,#120820);}
+.lc8 .cv{background:linear-gradient(150deg,#281440,#1a0c2e,#221238);}
+.lc8 .rb{background:linear-gradient(180deg,#40b0d0,#2088b0);}
+
+/* ══ QUESTION MODAL ══ */
+.modal-ov{
+  position:fixed;inset:0;
+  background:rgba(4,10,4,0.78);
+  backdrop-filter:blur(5px);
+  z-index:50;display:none;
+  align-items:center;justify-content:center;padding:24px;
+}
+.modal-ov.open{display:flex;}
+.modal-card{
+  max-width:620px;width:100%;
+  background:
+    repeating-linear-gradient(180deg,
+      transparent 0px,transparent 31px,
+      rgba(140,110,60,0.11) 31px,rgba(140,110,60,0.11) 32px
+    ),
+    linear-gradient(145deg,#fef8ea 0%,#f8f0d6 55%,#f2e8c4 100%);
+  border-radius:3px 12px 12px 3px;
+  padding:46px 54px 38px;
+  text-align:center;
+  box-shadow:
+    -10px 0 0 rgba(90,50,5,0.4),
+    -3px 0 10px rgba(0,0,0,0.35),
+    0 28px 60px rgba(0,0,0,0.75),
+    inset 10px 0 20px rgba(0,0,0,0.07);
+  animation:openBook .42s cubic-bezier(.34,1.3,.64,1);
+  position:relative;
+}
+@keyframes openBook{from{transform:rotateY(-14deg) scale(.86);opacity:0}to{transform:rotateY(0) scale(1);opacity:1}}
+/* Binding shadow */
+.modal-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:24px;border-radius:3px 0 0 3px;
+  background:linear-gradient(90deg,rgba(70,40,5,0.35),rgba(70,40,5,0.1) 50%,transparent 100%);
+}
+/* Page curl */
+.modal-card::after{
+  content:'';position:absolute;top:0;right:0;width:34px;height:34px;
+  background:linear-gradient(225deg,#ddd0a8 45%,transparent 46%);
+  border-radius:0 12px 0 0;
+}
+.m-label{font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(110,70,15,0.5);margin-bottom:18px;}
+.m-question{
+  font-family:'Cormorant Garamond',serif;font-size:clamp(20px,3vw,32px);
+  font-weight:600;color:#1e1000;line-height:1.5;margin-bottom:30px;
+}
+.m-close{
+  background:#2a1400;color:#d4a843;
+  border:1.5px solid rgba(212,168,67,0.38);
+  border-radius:50px;padding:11px 32px;
+  font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .2s;
+}
+.m-close:hover{background:#4a2400;transform:scale(1.04);}
+
+/* ══ EDIT PANEL ══ */
+.edit-ov{
+  position:fixed;inset:0;background:rgba(0,0,0,0.82);
+  backdrop-filter:blur(6px);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:14px;
+}
+.edit-ov.open{display:flex;}
+.edit-panel{
+  background:linear-gradient(145deg,#fdf8e8,#f5e8c0);
+  border-radius:14px;padding:24px;
+  max-width:540px;width:100%;max-height:86vh;
+  display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 30px 60px rgba(0,0,0,0.65);
+}
+.edit-panel h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;font-weight:700;color:#3a1a00;border-bottom:2px solid rgba(90,50,5,0.18);padding-bottom:10px;}
+.edit-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px;}
+.edit-scroll::-webkit-scrollbar{width:4px;}
+.edit-scroll::-webkit-scrollbar-thumb{background:rgba(90,50,5,0.22);border-radius:4px;}
+.edit-row{display:flex;gap:8px;align-items:flex-start;}
+.edit-n{font-size:11px;color:rgba(90,50,5,0.42);font-weight:800;min-width:22px;padding-top:10px;text-align:right;}
+.edit-inp{flex:1;background:rgba(255,255,255,0.68);border:1.5px solid rgba(90,50,5,0.18);border-radius:8px;padding:8px 12px;font-family:'Nunito',sans-serif;font-size:13px;color:#2a1200;resize:none;min-height:36px;transition:border-color .2s;}
+.edit-inp:focus{outline:none;border-color:rgba(90,50,5,0.48);}
+.edit-footer{display:flex;gap:10px;justify-content:flex-end;}
+.edit-save{background:#2a1400;color:#d4a843;border:none;border-radius:50px;padding:9px 24px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;}
+.edit-save:hover{background:#4a2400;transform:scale(1.03);}
+.edit-cancel{background:rgba(90,50,5,0.1);color:rgba(50,25,0,0.62);border:1.5px solid rgba(90,50,5,0.16);border-radius:50px;padding:9px 20px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+
+/* ══ BOTTOM BUTTONS ══ */
+.uibtn{
+  position:fixed;bottom:14px;z-index:10;
+  background:rgba(212,168,67,0.1);
+  border:1.5px solid rgba(212,168,67,0.28);
+  border-radius:50px;padding:7px 18px;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+  color:rgba(212,168,67,0.65);cursor:pointer;transition:all .2s;
+}
+.uibtn:hover{background:rgba(212,168,67,0.2);color:#d4a843;}
+</style>
+</head>
+<body>
+
+<div class="shelves"></div>
+
+<div class="game">
+  <div class="topbar">
+    <div class="timer-group">
+      <button class="t-btn" onclick="adjTimer(-10)">−</button>
+      <div class="timer-box" id="tdisp">0:30</div>
+      <button class="t-btn" onclick="adjTimer(10)">+</button>
+    </div>
+    <div class="title-wrap" onclick="editTitle()">
+      <div class="game-title" id="gtitle">Tell Me Something I Don't Know</div>
+      <input class="title-edit-input" id="tinput"
+        onblur="saveTitle()" onkeydown="if(event.key==='Enter')saveTitle()"/>
+    </div>
+    <div class="tap-hint">Tap a book to open</div>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="grid" id="book-grid"></div>
+  </div>
+</div>
+
+<!-- QUESTION MODAL -->
+<div class="modal-ov" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="m-label" id="mlabel"></div>
+    <div class="m-question" id="mq"></div>
+    <button class="m-close" onclick="closeModal()">✕ Close</button>
+  </div>
+</div>
+
+<!-- EDIT PANEL -->
+<div class="edit-ov" id="editov" onclick="if(event.target===this)closeEdit()">
+  <div class="edit-panel">
+    <h3>✏️ Edit Questions</h3>
+    <div class="edit-scroll" id="editscroll"></div>
+    <div class="edit-footer">
+      <button class="edit-cancel" onclick="closeEdit()">Cancel</button>
+      <button class="edit-save" onclick="saveEdit()">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<button class="uibtn" style="left:14px" onclick="resetGame()">↺ Reset All</button>
+<button class="uibtn" style="right:14px" onclick="openEdit()">✏️ Edit Questions</button>
+
+<script>
+const QUESTIONS=[
+  "What was your favorite subject in school?",
+  "What is the strangest food you have ever eaten?",
+  "If you could live anywhere in the world, where would it be?",
+  "What is one thing most people don't know about you?",
+  "What motivated you to go back to school?",
+  "What is a skill you wish you had?",
+  "What's your favorite way to spend a weekend?",
+  "What is one goal you want to achieve this year?",
+  "What is your superpower — your greatest strength?",
+  "If you could have dinner with anyone, who would it be?",
+  "What's a book, movie, or show that changed how you think?",
+  "What does success mean to you?",
+  "What is something you're really proud of?",
+  "What career did you want as a kid?",
+  "What's one piece of advice you'd give your younger self?",
+  "What's a hobby you've always wanted to try?",
+  "What does your ideal workday look like?",
+  "What's the best piece of advice you've ever received?",
+  "If you could master any subject instantly, what would it be?",
+  "What's something that always makes you smile?",
+  "What's a challenge you overcame that made you stronger?",
+  "Where do you see yourself in 5 years?",
+  "What's one thing you want your classmates to know about you?",
+  "What's your favorite thing about where you're from?",
+  "What's a fun or unusual fact about yourself?",
+  "What's your go-to comfort food?",
+  "What does a perfect Saturday morning look like for you?",
+  "What's a cause or issue you care deeply about?",
+  "What's one thing that surprised you about college life?",
+  "What's the best trip you've ever taken?",
+  "If you had a totally free day, what would you do?",
+  "What song always puts you in a good mood?",
+  "What's your biggest motivation right now?"
+];
+
+const ORNAMENTS=['✦','◆','❧','✿','◉','❋','☙','✾','◈'];
+let questions=[...QUESTIONS], totalSec=30, remaining=30, tInt=null;
+
+function buildGrid(){
+  const g=document.getElementById('book-grid');g.innerHTML='';
+  questions.forEach((q,i)=>{
+    const el=document.createElement('div');
+    el.className=`book lc${i%9}`;el.id='b'+i;
+    el.innerHTML=`
+      <div class="sp"><div class="sgem"></div><div class="sgem"></div><div class="sgem"></div></div>
+      <div class="cv"><div class="cf"></div><div class="cn">${i+1}</div><div class="co">${ORNAMENTS[i%9]}</div></div>
+      <div class="rb"></div>
+      <div class="pg"></div>`;
+    el.addEventListener('click',()=>openBook(i));
+    g.appendChild(el);
+  });
+}
+
+function openBook(i){
+  const el=document.getElementById('b'+i);
+  if(el.classList.contains('open'))return;
+  el.classList.add('open');
+  startTimer();
+  document.getElementById('mlabel').textContent='Book '+(i+1);
+  document.getElementById('mq').textContent=questions[i];
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+function adjTimer(d){clearInterval(tInt);tInt=null;totalSec=Math.max(10,Math.min(120,totalSec+d));remaining=totalSec;renderTimer();}
+function startTimer(){clearInterval(tInt);remaining=totalSec;renderTimer();tInt=setInterval(()=>{remaining--;renderTimer();if(remaining<=0){clearInterval(tInt);tInt=null;}},1000);}
+function renderTimer(){
+  const el=document.getElementById('tdisp');
+  el.textContent=Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+  el.style.color=remaining<=5?'#ef5350':remaining<=10?'#fb8c00':'#d4a843';
+}
+
+function editTitle(){const t=document.getElementById('gtitle'),i=document.getElementById('tinput');t.style.display='none';i.style.display='block';i.value=t.textContent;i.focus();i.select();}
+function saveTitle(){const t=document.getElementById('gtitle'),i=document.getElementById('tinput');if(i.value.trim())t.textContent=i.value.trim();t.style.display='';i.style.display='none';}
+
+function openEdit(){
+  document.getElementById('editscroll').innerHTML=questions.map((q,i)=>`
+    <div class="edit-row"><div class="edit-n">${i+1}</div>
+    <textarea class="edit-inp" id="eq${i}" rows="2">${q}</textarea></div>`).join('');
+  document.getElementById('editov').classList.add('open');
+}
+function closeEdit(){document.getElementById('editov').classList.remove('open');}
+function saveEdit(){questions=questions.map((_,i)=>{const el=document.getElementById('eq'+i);return el&&el.value.trim()?el.value.trim():questions[i];});closeEdit();buildGrid();}
+
+function resetGame(){clearInterval(tInt);tInt=null;remaining=totalSec;renderTimer();document.querySelectorAll('.book').forEach(b=>b.classList.remove('open'));closeModal();}
+
+buildGrid();renderTimer();
+</script>
+</body>
+</html>
